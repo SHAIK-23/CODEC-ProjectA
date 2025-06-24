@@ -1,0 +1,186 @@
+// --- Top-Level Module (traffic_light_controller.v) ---
+module traffic_light_controller (
+    input clk,
+    input rst_n,
+    // Optional sensor inputs
+    // input car_north,
+    // input car_south,
+    // input car_east,
+    // input car_west,
+    output reg north_red,
+    output reg north_yellow,
+    output reg north_green,
+    output reg south_red,
+    output reg south_yellow,
+    output reg south_green,
+    output reg east_red,
+    output reg east_yellow,
+    output reg east_green,
+    output reg west_red,
+    output reg west_yellow,
+    output reg west_green
+);
+
+    // Internal signals for FSM state and timer done signals
+    reg [2:0] current_state; // Example: 3 bits for states
+    wire timer_done;
+
+    // Instantiate FSM
+    fsm_traffic_light u_fsm (
+        .clk(clk),
+        .rst_n(rst_n),
+        .timer_done(timer_done),
+        .current_state(current_state)
+        // Add sensor inputs if used by FSM
+    );
+
+    // Instantiate Timer
+    timer u_timer (
+        .clk(clk),
+        .rst_n(rst_n),
+        .start_timer(start_timer_signal), // Signal from FSM to start timer
+        .load_value(timer_load_value),   // Value from FSM for timer duration
+        .timer_done(timer_done)
+    );
+
+    // --- Output Logic (Combinational based on current_state) ---
+    always @(*) begin
+        case (current_state)
+            // State 0: North/South Green, East/West Red
+            STATE_NS_GREEN: begin
+                north_red = 1'b0; north_yellow = 1'b0; north_green = 1'b1;
+                south_red = 1'b0; south_yellow = 1'b0; south_green = 1'b1;
+                east_red = 1'b1; east_yellow = 1'b0; east_green = 1'b0;
+                west_red = 1'b1; west_yellow = 1'b0; west_green = 1'b0;
+            end
+            // State 1: North/South Yellow, East/West Red
+            STATE_NS_YELLOW: begin
+                north_red = 1'b0; north_yellow = 1'b1; north_green = 1'b0;
+                south_red = 1'b0; south_yellow = 1'b1; south_green = 1'b0;
+                east_red = 1'b1; east_yellow = 1'b0; east_green = 1'b0;
+                west_red = 1'b1; west_yellow = 1'b0; west_green = 1'b0;
+            end
+            // ... define all other states and their light configurations
+            default: begin // Default to all red (safe state)
+                north_red = 1'b1; north_yellow = 1'b0; north_green = 1'b0;
+                south_red = 1'b1; south_yellow = 1'b0; south_green = 1'b0;
+                east_red = 1'b1; east_yellow = 1'b0; east_green = 1'b0;
+                west_red = 1'b1; west_yellow = 1'b0; west_green = 1'b0;
+            end
+        endcase
+    end
+
+    // Logic to set start_timer_signal and timer_load_value based on current_state
+    // This would typically be within the FSM or a combinational block in the top module
+    // For simplicity, let's assume FSM sets these directly.
+    // ... (This logic needs to be defined based on your FSM transitions)
+
+endmodule
+
+// --- FSM Module (fsm_traffic_light.v) ---
+module fsm_traffic_light (
+    input clk,
+    input rst_n,
+    input timer_done,
+    output reg [2:0] current_state,
+    output reg start_timer,      // Output to start timer
+    output reg [31:0] timer_load_value // Output to set timer duration (adjust bit width)
+    // Add sensor inputs if they influence state transitions
+);
+
+    // State definitions (using parameters for readability)
+    parameter STATE_NS_GREEN  = 3'b000;
+    parameter STATE_NS_YELLOW = 3'b001;
+    parameter STATE_EW_GREEN  = 3'b010;
+    parameter STATE_EW_YELLOW = 3'b011;
+    // ... add more states as needed (e.g., for pedestrian crossing)
+
+    // Timings (in clock cycles - depends on your clock frequency)
+    // Assuming a 100 MHz clock, 1 second = 100,000,000 cycles
+    parameter GREEN_TIME  = 3000000000; // 30 seconds (adjust based on clock)
+    parameter YELLOW_TIME = 500000000;  // 5 seconds
+
+    // State register
+    reg [2:0] next_state;
+
+    // FSM State Logic (Sequential)
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            current_state <= STATE_NS_GREEN; // Initial state
+        end else begin
+            current_state <= next_state;
+        end
+    end
+
+    // Next State Logic (Combinational)
+    always @(*) begin
+        next_state = current_state; // Default to stay in current state
+        start_timer = 1'b0; // Default: don't start timer
+        timer_load_value = 32'd0; // Default: 0
+
+        case (current_state)
+            STATE_NS_GREEN: begin
+                timer_load_value = GREEN_TIME; // Set timer for green duration
+                start_timer = 1'b1; // Start timer
+                if (timer_done) begin
+                    next_state = STATE_NS_YELLOW;
+                end
+            end
+            STATE_NS_YELLOW: begin
+                timer_load_value = YELLOW_TIME; // Set timer for yellow duration
+                start_timer = 1'b1; // Start timer
+                if (timer_done) begin
+                    next_state = STATE_EW_GREEN; // Transition to EW Green
+                end
+            end
+            STATE_EW_GREEN: begin
+                timer_load_value = GREEN_TIME;
+                start_timer = 1'b1;
+                if (timer_done) begin
+                    next_state = STATE_EW_YELLOW;
+                end
+            end
+            STATE_EW_YELLOW: begin
+                timer_load_value = YELLOW_TIME;
+                start_timer = 1'b1;
+                if (timer_done) begin
+                    next_state = STATE_NS_GREEN; // Loop back to NS Green
+                end
+            end
+            default: begin
+                next_state = STATE_NS_GREEN; // Should not happen, but safe default
+            end
+        endcase
+    end
+
+endmodule
+
+// --- Timer Module (timer.v) ---
+module timer (
+    input clk,
+    input rst_n,
+    input start_timer,
+    input [31:0] load_value, // Max count value for the timer
+    output reg timer_done
+);
+
+    reg [31:0] counter; // Adjust bit width based on load_value
+
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            counter <= 32'd0;
+            timer_done <= 1'b0;
+        end else begin
+            if (start_timer) begin
+                counter <= load_value; // Load initial value
+                timer_done <= 1'b0;
+            end else if (counter > 32'd0) begin
+                counter <= counter - 32'd1; // Decrement counter
+                timer_done <= 1'b0;
+            end else begin
+                timer_done <= 1'b1; // Counter reached zero
+            end
+        end
+    end
+
+endmodule
