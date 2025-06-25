@@ -18,3 +18,5 @@ MENTOR: VAISHALI.
  **State Diagram** :https://github.com/SHAIK-23/CODEC-ProjectA/blob/8a54adf381dc5bd4187a300914a6c28dbedb2992/WhatsApp%20Image%202025-06-25%20at%2008.59.13_7e99a635.jpg
  
 **State Table** :https://github.com/SHAIK-23/CODEC-ProjectA/blob/a4518b145f508f8de07767f2eb2218f819c2ff62/state_Table.jpg
+
+**Output-Waveform** :https://github.com/SHAIK-23/CODEC-ProjectA/blob/2791c0db0f4ce21638a3c62ea8a6b51721bd4a15/OUTPUT-waveform.jpg
