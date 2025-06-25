@@ -1,0 +1,79 @@
+/* Code for Test Bench Wave Form*/
+
+
+// tb_traffic_light_controller.v
+// Test bench for traffic_light_controller
+
+`timescale 1ns / 1ps // Define time units for simulation
+
+module tb_traffic_light_controller;
+
+    // Declare signals for interfacing with the DUT (Design Under Test)
+    reg clk;
+    reg rst_n;
+
+    wire ns_red;
+    wire ns_yellow;
+    wire ns_green;
+    wire ew_red;
+    wire ew_yellow;
+    wire ew_green;
+
+    // Instantiate the DUT
+    traffic_light_controller dut (
+        .clk(clk),
+        .rst_n(rst_n),
+        .ns_red(ns_red),
+        .ns_yellow(ns_yellow),
+        .ns_green(ns_green),
+        .ew_red(ew_red),
+        .ew_yellow(ew_yellow),
+        .ew_green(ew_green)
+    );
+
+    // Clock generation
+    parameter CLK_PERIOD = 10; // 10 ns period = 100 MHz
+    initial begin
+        clk = 1'b0;
+        forever #(CLK_PERIOD / 2) clk = ~clk; // Toggle clock every half period
+    end
+
+    // Test sequence
+    initial begin
+        // Initialize inputs
+        rst_n = 1'b0; // Assert reset
+        # (CLK_PERIOD * 2); // Hold reset for a few clock cycles
+
+        rst_n = 1'b1; // Deassert reset
+
+        // Wait for several cycles to observe initial state (NS_GREEN)
+        # (traffic_light_controller.GREEN_TIME * CLK_PERIOD); // Wait for North-South Green period
+
+        // Observe transition to NS_YELLOW
+        # (traffic_light_controller.YELLOW_TIME * CLK_PERIOD); // Wait for North-South Yellow period
+
+        // Observe transition to EW_GREEN
+        # (traffic_light_controller.GREEN_TIME * CLK_PERIOD); // Wait for East-West Green period
+
+        // Observe transition to EW_YELLOW
+        # (traffic_light_controller.YELLOW_TIME * CLK_PERIOD); // Wait for East-West Yellow period
+
+        // Observe transition back to NS_GREEN (one full cycle completed)
+        # (traffic_light_controller.GREEN_TIME * CLK_PERIOD);
+
+        // Add more test cases here if needed, e.g.,
+        // - Observe another full cycle
+        // - Test reset during different states
+
+        $display("Simulation finished.");
+        $stop; // Stop simulation
+    end
+
+    // Optional: Monitor and display signal changes (for console output)
+    initial begin
+        $monitor("Time=%0t ns | State=%b | NS: R=%b Y=%b G=%b | EW: R=%b Y=%b G=%b",
+                 $time, dut.current_state, ns_red, ns_yellow, ns_green,
+                 ew_red, ew_yellow, ew_green);
+    end
+
+endmodule
