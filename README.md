@@ -13,4 +13,6 @@ MENTOR: VAISHALI.
            based on real-time conditions...
            
 
-**  Logic_Diagram**: https://github.com/SHAIK-23/CODEC-ProjectA/blob/afecbe1db2c7ae12f27941e5ffd7099e7aa4e42e/WhatsApp%20Image%202025-06-25%20at%2008.59.13_e5876d30.jpg
+**Logic_Diagram**: https://github.com/SHAIK-23/CODEC-ProjectA/blob/afecbe1db2c7ae12f27941e5ffd7099e7aa4e42e/WhatsApp%20Image%202025-06-25%20at%2008.59.13_e5876d30.jpg
+
+ **State Diagram** :https://github.com/SHAIK-23/CODEC-ProjectA/blob/8a54adf381dc5bd4187a300914a6c28dbedb2992/WhatsApp%20Image%202025-06-25%20at%2008.59.13_7e99a635.jpg
